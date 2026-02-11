@@ -1,0 +1,110 @@
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { motion } from 'framer-motion'
+import { Copy, ExternalLink, Check, RefreshCw, Link2 } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { useToast } from '@/components/ui/use-toast'
+import { Badge } from '@/components/ui/badge'
+import { cn, formatBytes } from '@/lib/utils'
+import { UploadResult } from '@/types'
+
+interface UploadResultsProps {
+  results: UploadResult[]
+  onReset: () => void
+}
+
+export function UploadResults({ results, onReset }: UploadResultsProps) {
+  const { t } = useTranslation()
+  const { toast } = useToast()
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+
+  const handleCopy = async (url: string, id: string) => {
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopiedId(id)
+      toast({
+        variant: "success",
+        title: t('home.copied')
+      })
+      setTimeout(() => setCopiedId(null), 2000)
+    } catch {
+      toast({
+        variant: "destructive",
+        title: "Failed to copy"
+      })
+    }
+  }
+
+  return (
+    <Card className="overflow-hidden">
+      <CardHeader className="bg-muted/50">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Link2 className="h-5 w-5 text-primary" />
+            <CardTitle className="text-lg">{t('home.results')}</CardTitle>
+          </div>
+          <Badge variant="success">{results.length} files</Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="p-4 space-y-3">
+        {results.map((result, index) => (
+          <motion.div
+            key={result.id}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+            className="rounded-lg border bg-background p-3 space-y-2"
+          >
+            <div className="flex items-center justify-between">
+              <div className="min-w-0">
+                <p className="text-sm font-medium truncate">{result.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {formatBytes(result.size)} • {result.type}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Input 
+                value={result.url} 
+                readOnly 
+                className="flex-1 text-xs h-8"
+              />
+              <Button
+                size="icon"
+                variant="outline"
+                className="h-8 w-8 shrink-0"
+                onClick={() => handleCopy(result.url, result.id)}
+              >
+                {copiedId === result.id ? (
+                  <Check className="h-4 w-4 text-green-500" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
+              </Button>
+              <Button
+                size="icon"
+                variant="outline"
+                className="h-8 w-8 shrink-0"
+                onClick={() => window.open(result.url, '_blank')}
+              >
+                <ExternalLink className="h-4 w-4" />
+              </Button>
+            </div>
+          </motion.div>
+        ))}
+
+        <Button 
+          onClick={onReset} 
+          variant="outline" 
+          className="w-full h-10"
+        >
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Upload More
+        </Button>
+      </CardContent>
+    </Card>
+  )
+}
