@@ -1,0 +1,55 @@
+import crypto from 'crypto'
+
+export const securityHeaders = (req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff')
+  res.setHeader('X-Frame-Options', 'DENY')
+  res.setHeader('X-XSS-Protection', '1; mode=block')
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()')
+  res.setHeader('Content-Security-Policy', 
+    "default-src 'self'; " +
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+    "style-src 'self' 'unsafe-inline'; " +
+    "img-src 'self' data: https:; " +
+    "font-src 'self'; " +
+    "connect-src 'self' https:; " +
+    "frame-ancestors 'none';"
+  )
+  res.removeHeader('X-Powered-By')
+  next()
+}
+
+export const sanitizeInput = (req, res, next) => {
+  if (req.body) {
+    Object.keys(req.body).forEach(key => {
+      if (typeof req.body[key] === 'string') {
+        req.body[key] = req.body[key]
+          .replace(/[<>]/g, '')
+          .trim()
+          .substring(0, 1000)
+      }
+    })
+  }
+  next()
+}
+
+export const checkSqlInjection = (req, res, next) => {
+  const sqlPattern = /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION)\b)|(--|\/\*|\*\/|';|")/i
+  
+  const checkString = (str) => sqlPattern.test(str)
+  
+  const suspicious = Object.values(req.query).some(v => checkString(String(v))) ||
+                    Object.values(req.body).some(v => checkString(String(v))) ||
+                    checkString(req.path)
+  
+  if (suspicious) {
+    return res.status(403).json({
+      author: "aka",
+      email: "akaanakbaik17@proton.me",
+      success: false,
+      error: "Security violation detected"
+    })
+  }
+  
+  next()
+}
