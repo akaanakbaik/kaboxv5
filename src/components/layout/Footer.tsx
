@@ -1,0 +1,58 @@
+import { useTranslation } from 'react-i18next'
+import { motion } from 'framer-motion'
+import { Heart, Code, MessageCircle, Github } from 'lucide-react'
+
+export default function Footer() {
+  const { t } = useTranslation()
+
+  return (
+    <footer className="w-full border-t bg-background py-4 mt-auto">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex items-center space-x-1 text-xs text-muted-foreground"
+          >
+            <span>{t('footer.createdBy')}</span>
+            <a 
+              href="https://akadev.me" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="font-medium text-red-600 hover:text-red-700 transition-colors"
+            >
+              {t('footer.aka')}
+            </a>
+            <span>{t('footer.with')}</span>
+            <Heart className="h-3 w-3 text-red-500 fill-red-500" />
+            <span>{t('footer.and')}</span>
+            <Code className="h-3 w-3" />
+          </motion.div>
+
+          <div className="flex items-center space-x-3">
+            <motion.a
+              href="https://t.me/akamodebaik"
+              target="_blank"
+              rel="noopener noreferrer"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              className="p-2 rounded-full bg-muted hover:bg-muted/80 transition-colors"
+            >
+              <MessageCircle className="h-4 w-4" />
+            </motion.a>
+            <motion.a
+              href="https://github.com/akaanakbaik"
+              target="_blank"
+              rel="noopener noreferrer"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              className="p-2 rounded-full bg-muted hover:bg-muted/80 transition-colors"
+            >
+              <Github className="h-4 w-4" />
+            </motion.a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  )
+}
