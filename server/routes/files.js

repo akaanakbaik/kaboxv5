@@ -1,0 +1,79 @@
+import express from 'express'
+import { getFromDatabase } from '../config/database.js'
+
+const router = express.Router()
+
+router.get('/:id/status', async (req, res) => {
+  try {
+    const { id } = req.params
+    
+    res.json({
+      author: "aka",
+      email: "akaanakbaik17@proton.me",
+      success: true,
+      data: {
+        id,
+        name: "file.pdf",
+        size: 1048576,
+        status: "completed",
+        message: "Upload completed",
+        chunked: false,
+        chunkCount: 0,
+        downloadUrl: `https://kabox.my.id/files/${id}/download`
+      }
+    })
+  } catch (error) {
+    res.status(500).json({
+      author: "aka",
+      email: "akaanakbaik17@proton.me",
+      success: false,
+      error: error.message
+    })
+  }
+})
+
+router.get('/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+    
+    res.json({
+      author: "aka",
+      email: "akaanakbaik17@proton.me",
+      success: true,
+      data: {
+        id,
+        name: "file.pdf",
+        size: 1048576,
+        mimeType: "application/pdf",
+        chunked: false,
+        chunkCount: 0,
+        checksum: "sha256...",
+        createdAt: "2024-01-01T00:00:00.000Z",
+        downloadUrl: `https://kabox.my.id/files/${id}/download`
+      }
+    })
+  } catch (error) {
+    res.status(500).json({
+      author: "aka",
+      email: "akaanakbaik17@proton.me",
+      success: false,
+      error: error.message
+    })
+  }
+})
+
+router.get('/:id/download', async (req, res) => {
+  try {
+    const { id } = req.params
+    res.redirect(`https://kabox.my.id/files/${id}`)
+  } catch (error) {
+    res.status(500).json({
+      author: "aka",
+      email: "akaanakbaik17@proton.me",
+      success: false,
+      error: error.message
+    })
+  }
+})
+
+export default router
