@@ -1,0 +1,144 @@
+import TelegramBot from 'node-telegram-bot-api'
+import dotenv from 'dotenv'
+
+dotenv.config()
+
+const token = process.env.TELEGRAM_BOT_TOKEN
+const ownerId = process.env.TELEGRAM_OWNER_ID
+const channelId = process.env.TELEGRAM_CHANNEL_ID
+
+class TelegramService {
+  constructor() {
+    this.bot = new TelegramBot(token, { polling: true })
+    this.setupCommands()
+    this.notifyStartup = this.notifyStartup.bind(this)
+    this.logRequest = this.logRequest.bind(this)
+    this.notifyError = this.notifyError.bind(this)
+    this.notifyRateLimit = this.notifyRateLimit.bind(this)
+  }
+
+  setupCommands() {
+    this.bot.onText(/\/start/, (msg) => {
+      if (msg.from.id.toString() !== ownerId) {
+        this.bot.sendMessage(msg.chat.id, 'Akses ditolak. Bot ini hanya untuk owner.')
+        return
+      }
+      this.bot.sendMessage(msg.chat.id, 'Selamat datang Owner! Gunakan /help untuk melihat perintah.')
+    })
+
+    this.bot.onText(/\/help/, (msg) => {
+      if (msg.from.id.toString() !== ownerId) return
+      
+      const helpText = `
+Perintah Owner:
+/stats - Statistik server
+/files - Total file terupload
+/users - IP aktif 24 jam
+/blocked - Daftar IP diblokir
+/logs - Log request terakhir
+/clearlogs - Hapus log
+/backup - Backup database
+/status - Cek status layanan
+/restart - Restart notifikasi
+/maintenance - Mode maintenance
+/broadcast [pesan] - Kirim ke channel
+/checkdb - Cek koneksi database
+/cleanfiles - Bersihkan file lama
+/info - Info sistem
+/security - Cek keamanan
+/performance - Metrics performa
+/alerts - Atur notifikasi
+/config - Lihat konfigurasi
+/test - Test notifikasi
+/whois [ip] - Info IP
+/traffic - Analisis traffic
+      `
+      this.bot.sendMessage(msg.chat.id, helpText)
+    })
+
+    this.bot.onText(/\/stats/, async (msg) => {
+      if (msg.from.id.toString() !== ownerId) return
+      this.bot.sendMessage(msg.chat.id, '📊 Server berjalan normal')
+    })
+
+    this.bot.onText(/\/broadcast (.+)/, (msg, match) => {
+      if (msg.from.id.toString() !== ownerId) return
+      this.bot.sendMessage(channelId, `📢 ${match[1]}`)
+      this.bot.sendMessage(msg.chat.id, 'Pesan broadcast terkirim')
+    })
+
+    this.bot.onText(/\/whois (.+)/, async (msg, match) => {
+      if (msg.from.id.toString() !== ownerId) return
+      this.bot.sendMessage(msg.chat.id, `🔍 Checking IP: ${match[1]}...`)
+    })
+
+    this.bot.on('message', (msg) => {
+      if (msg.from.id.toString() !== ownerId && !msg.text?.startsWith('/')) {
+        this.bot.sendMessage(msg.chat.id, 'Peringatan: Anda bukan owner. Akses dicatat.')
+        this.notifyOwner(`User tidak dikenal mencoba akses: ${msg.from.username || msg.from.id}`)
+      }
+    })
+  }
+
+  async notifyStartup(port) {
+    const message = `
+🚀 <b>Kabox Server Started</b>
+Port: ${port}
+Time: ${new Date().toISOString()}
+Status: Online
+    `
+    await this.bot.sendMessage(channelId, message, { parse_mode: 'HTML' })
+  }
+
+  async logRequest(req) {
+    const message = `
+📥 <b>New Request</b>
+Method: ${req.method}
+Path: ${req.path}
+IP: ${req.ip}
+UA: ${req.headers['user-agent']?.substring(0, 50)}...
+Time: ${new Date().toISOString()}
+    `
+    await this.bot.sendMessage(channelId, message, { parse_mode: 'HTML' })
+  }
+
+  async notifyError(type, error) {
+    const message = `
+⚠️ <b>Error Alert</b>
+Type: ${type}
+Error: ${error.substring(0, 200)}
+Time: ${new Date().toISOString()}
+    `
+    await this.bot.sendMessage(ownerId, message, { parse_mode: 'HTML' })
+    await this.bot.sendMessage(channelId, message, { parse_mode: 'HTML' })
+  }
+
+  async notifyRateLimit(ip) {
+    const message = `
+🚫 <b>Rate Limit Exceeded</b>
+IP: ${ip}
+Action: Blocked
+Time: ${new Date().toISOString()}
+    `
+    await this.bot.sendMessage(channelId, message, { parse_mode: 'HTML' })
+    await this.bot.sendMessage(ownerId, message, { parse_mode: 'HTML' })
+  }
+
+  async notifyOwner(text) {
+    await this.bot.sendMessage(ownerId, text)
+  }
+
+  async notifyUpload(fileData) {
+    const message = `
+✅ <b>File Uploaded</b>
+Name: ${fileData.name}
+Size: ${fileData.size}
+Type: ${fileData.type}
+DB: ${fileData.db}
+Time: ${new Date().toISOString()}
+    `
+    await this.bot.sendMessage(channelId, message, { parse_mode: 'HTML' })
+  }
+}
+
+export const telegramBot = new TelegramService()
