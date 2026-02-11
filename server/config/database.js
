@@ -1,0 +1,185 @@
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import { neon } from '@neondatabase/serverless'
+import { createClient as createTursoClient } from '@libsql/client'
+import { v2 as cloudinary } from 'cloudinary'
+import ImageKit from 'imagekit'
+import dotenv from 'dotenv'
+
+dotenv.config()
+
+const supabase = createSupabaseClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+)
+
+const neonSql = neon(process.env.NEON_DATABASE_URL)
+
+const turso = createTursoClient({
+  url: process.env.TURSO_DATABASE_URL,
+  authToken: process.env.TURSO_AUTH_TOKEN
+})
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+})
+
+const imagekit = new ImageKit({
+  publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
+  privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
+  urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT
+})
+
+const DB_STRATEGIES = {
+  ROUND_ROBIN: 'roundRobin',
+  RANDOM: 'random',
+  SIZE_BASED: 'sizeBased',
+  TYPE_BASED: 'typeBased'
+}
+
+let currentDbIndex = 0
+const databases = ['supabase', 'neon', 'turso', 'cloudinary', 'imagekit']
+
+function getNextDatabase() {
+  const db = databases[currentDbIndex]
+  currentDbIndex = (currentDbIndex + 1) % databases.length
+  return db
+}
+
+function getRandomDatabase() {
+  return databases[Math.floor(Math.random() * databases.length)]
+}
+
+function getDatabaseBySize(size) {
+  if (size < 1024 * 1024) return 'turso'
+  if (size < 10 * 1024 * 1024) return 'neon'
+  return 'supabase'
+}
+
+function getDatabaseByType(mimeType) {
+  if (mimeType.startsWith('image/')) return 'cloudinary'
+  if (mimeType.startsWith('video/')) return 'imagekit'
+  return getRandomDatabase()
+}
+
+export async function selectDatabase(file, strategy = DB_STRATEGIES.RANDOM) {
+  switch (strategy) {
+    case DB_STRATEGIES.ROUND_ROBIN:
+      return getNextDatabase()
+    case DB_STRATEGIES.SIZE_BASED:
+      return getDatabaseBySize(file.size)
+    case DB_STRATEGIES.TYPE_BASED:
+      return getDatabaseByType(file.mimetype)
+    case DB_STRATEGIES.RANDOM:
+    default:
+      return getRandomDatabase()
+  }
+}
+
+export async function saveToDatabase(dbName, fileData, metadata) {
+  const id = generateId()
+  const timestamp = new Date().toISOString()
+  
+  try {
+    switch (dbName) {
+      case 'supabase':
+        const { data: supabaseData, error: supabaseError } = await supabase
+          .from('files')
+          .insert([{
+            id,
+            name: metadata.name,
+            size: metadata.size,
+            type: metadata.type,
+            data: fileData,
+            created_at: timestamp
+          }])
+          .select()
+        if (supabaseError) throw supabaseError
+        return { id, db: 'supabase', data: supabaseData }
+
+      case 'neon':
+        const neonResult = await neonSql`
+          INSERT INTO files (id, name, size, type, data, created_at)
+          VALUES (${id}, ${metadata.name}, ${metadata.size}, ${metadata.type}, ${fileData}, ${timestamp})
+          RETURNING *
+        `
+        return { id, db: 'neon', data: neonResult[0] }
+
+      case 'turso':
+        await turso.execute({
+          sql: `INSERT INTO files (id, name, size, type, data, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
+          args: [id, metadata.name, metadata.size, metadata.type, fileData, timestamp]
+        })
+        return { id, db: 'turso' }
+
+      case 'cloudinary':
+        const cloudResult = await cloudinary.uploader.upload(fileData, {
+          public_id: id,
+          resource_type: 'auto'
+        })
+        return { 
+          id, 
+          db: 'cloudinary', 
+          url: cloudResult.secure_url,
+          data: cloudResult 
+        }
+
+      case 'imagekit':
+        const imagekitResult = await imagekit.upload({
+          file: fileData,
+          fileName: metadata.name,
+          folder: '/kabox'
+        })
+        return { 
+          id, 
+          db: 'imagekit', 
+          url: imagekitResult.url,
+          data: imagekitResult 
+        }
+
+      default:
+        throw new Error(`Unknown database: ${dbName}`)
+    }
+  } catch (error) {
+    throw new Error(`Database ${dbName} failed: ${error.message}`)
+  }
+}
+
+export async function getFromDatabase(dbName, id) {
+  switch (dbName) {
+    case 'supabase':
+      const { data: supabaseData } = await supabase
+        .from('files')
+        .select('*')
+        .eq('id', id)
+        .single()
+      return supabaseData
+
+    case 'neon':
+      const neonResult = await neonSql`SELECT * FROM files WHERE id = ${id}`
+      return neonResult[0]
+
+    case 'turso':
+      const tursoResult = await turso.execute({
+        sql: `SELECT * FROM files WHERE id = ?`,
+        args: [id]
+      })
+      return tursoResult.rows[0]
+
+    case 'cloudinary':
+      return { url: `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/${id}` }
+
+    case 'imagekit':
+      return { url: `${process.env.IMAGEKIT_URL_ENDPOINT}/${id}` }
+
+    default:
+      return null
+  }
+}
+
+function generateId() {
+  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+}
+
+export { supabase, neonSql, turso, cloudinary, imagekit }
