@@ -1,0 +1,67 @@
+import { useTranslation } from 'react-i18next'
+import { motion } from 'framer-motion'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Shield, FileText, Scale, AlertTriangle, Lock, Mail, RefreshCw, CheckCircle } from 'lucide-react'
+
+export default function Terms() {
+  const { t } = useTranslation()
+
+  const sections = [
+    { key: 'acceptance', icon: CheckCircle },
+    { key: 'service', icon: FileText },
+    { key: 'usage', icon: Shield },
+    { key: 'prohibited', icon: AlertTriangle },
+    { key: 'privacy', icon: Lock },
+    { key: 'liability', icon: Scale },
+    { key: 'changes', icon: RefreshCw },
+    { key: 'contact', icon: Mail },
+  ]
+
+  return (
+    <div className="max-w-3xl mx-auto space-y-6">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center space-y-2"
+      >
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+          {t('terms.title')}
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          {t('terms.lastUpdated')}
+        </p>
+      </motion.div>
+
+      <ScrollArea className="h-[calc(100vh-300px)] rounded-lg border">
+        <div className="p-6 space-y-6">
+          {sections.map((section, index) => {
+            const Icon = section.icon
+            return (
+              <motion.div
+                key={section.key}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center space-x-2">
+                      <Icon className="h-5 w-5 text-primary" />
+                      <span>{t(`terms.sections.${section.key}.title`)}</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {t(`terms.sections.${section.key}.content`)}
+                    </p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )
+          })}
+        </div>
+      </ScrollArea>
+    </div>
+  )
+}
