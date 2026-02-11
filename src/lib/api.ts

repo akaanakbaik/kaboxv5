@@ -1,0 +1,46 @@
+import { ApiResponse, UploadResult } from '@/types'
+
+const API_BASE = import.meta.env.VITE_API_URL || '/api'
+
+export async function uploadFiles(
+  files: File[],
+  onProgress?: (progress: number, index: number) => void
+): Promise<ApiResponse<UploadResult[]>> {
+  const formData = new FormData()
+  files.forEach(file => formData.append('files', file))
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    
+    xhr.upload.addEventListener('progress', (e) => {
+      if (e.lengthComputable && onProgress) {
+        const progress = Math.round((e.loaded / e.total) * 100)
+        files.forEach((_, index) => onProgress(progress, index))
+      }
+    })
+
+    xhr.addEventListener('load', () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(JSON.parse(xhr.responseText))
+      } else {
+        reject(new Error(`HTTP ${xhr.status}: ${xhr.statusText}`))
+      }
+    })
+
+    xhr.addEventListener('error', () => reject(new Error('Network error')))
+    xhr.addEventListener('abort', () => reject(new Error('Upload aborted')))
+
+    xhr.open('POST', `${API_BASE}/upload`)
+    xhr.send(formData)
+  })
+}
+
+export async function getFileStatus(id: string): Promise<ApiResponse<any>> {
+  const response = await fetch(`${API_BASE}/files/${id}/status`)
+  return response.json()
+}
+
+export async function getFileInfo(id: string): Promise<ApiResponse<any>> {
+  const response = await fetch(`${API_BASE}/files/${id}`)
+  return response.json()
+}
