@@ -1,0 +1,165 @@
+import { useState, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
+import { motion, AnimatePresence } from 'framer-motion'
+import { UploadZone } from '@/components/upload/UploadZone'
+import { UploadProgress } from '@/components/upload/UploadProgress'
+import { UploadResults } from '@/components/upload/UploadResults'
+import { Button } from '@/components/ui/button'
+import { useToast } from '@/components/ui/use-toast'
+import { UploadFile, UploadResult } from '@/types'
+import { uploadFiles } from '@/lib/api'
+
+export default function Home() {
+  const { t } = useTranslation()
+  const { toast } = useToast()
+  const [files, setFiles] = useState<UploadFile[]>([])
+  const [isUploading, setIsUploading] = useState(false)
+  const [results, setResults] = useState<UploadResult[]>([])
+
+  const handleFilesSelected = useCallback((newFiles: File[]) => {
+    if (files.length + newFiles.length > 5) {
+      toast({
+        variant: "destructive",
+        title: t('home.error.tooMany'),
+        description: t('home.maxFiles')
+      })
+      return
+    }
+
+    const uploadFiles: UploadFile[] = newFiles.map(file => ({
+      id: Math.random().toString(36).substring(7),
+      file,
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      progress: 0,
+      status: 'pending'
+    }))
+
+    setFiles(prev => [...prev, ...uploadFiles])
+    setResults([])
+  }, [files.length, t, toast])
+
+  const handleRemoveFile = useCallback((id: string) => {
+    setFiles(prev => prev.filter(f => f.id !== id))
+  }, [])
+
+  const handleStartUpload = async () => {
+    if (files.length === 0) return
+
+    setIsUploading(true)
+    const totalFiles = files.length
+
+    try {
+      const response = await uploadFiles(
+        files.map(f => f.file),
+        (progress, index) => {
+          setFiles(prev => prev.map((f, i) => 
+            i === index ? { ...f, progress, status: progress === 100 ? 'processing' : 'uploading' } : f
+          ))
+        }
+      )
+
+      if (response.success && response.data) {
+        setResults(response.data)
+        setFiles([])
+        toast({
+          variant: "success",
+          title: t('home.success'),
+          description: `${response.data.length} ${t('home.results')}`
+        })
+      } else {
+        throw new Error(response.message || 'Upload failed')
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: t('home.error.failed'),
+        description: error instanceof Error ? error.message : 'Unknown error'
+      })
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  const clearAll = () => {
+    setFiles([])
+    setResults([])
+  }
+
+  return (
+    <div className="space-y-6 max-w-2xl mx-auto">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center space-y-2"
+      >
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+          {t('home.title')}
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          {t('home.subtitle')}
+        </p>
+      </motion.div>
+
+      <AnimatePresence mode="wait">
+        {results.length === 0 ? (
+          <motion.div
+            key="upload"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="space-y-4"
+          >
+            <UploadZone 
+              onFilesSelected={handleFilesSelected}
+              disabled={isUploading}
+            />
+
+            {files.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="space-y-3"
+              >
+                <UploadProgress 
+                  files={files} 
+                  onRemove={handleRemoveFile}
+                  isUploading={isUploading}
+                />
+                
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={handleStartUpload}
+                    disabled={isUploading}
+                    className="flex-1 h-10"
+                  >
+                    {isUploading ? t('home.uploading') : t('home.startUpload')}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={clearAll}
+                    disabled={isUploading}
+                    className="h-10 px-4"
+                  >
+                    Reset
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+          </motion.div>
+        ) : (
+          <motion.div
+            key="results"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+          >
+            <UploadResults results={results} onReset={clearAll} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
