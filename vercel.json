@@ -1,26 +1,17 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
-    },
-    {
-      "src": "server/index.js",
-      "use": "@vercel/node"
-    }
-  ],
+  "framework": "vite",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "installCommand": "npm install",
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "server/index.js"
+      "destination": "/server/index.js"
     },
     {
       "source": "/files/(.*)",
-      "destination": "server/index.js"
+      "destination": "/server/index.js"
     },
     {
       "source": "/(.*)",
@@ -34,32 +25,8 @@
         {
           "key": "Cache-Control",
           "value": "no-cache, no-store, must-revalidate"
-        },
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        },
-        {
-          "key": "X-XSS-Protection",
-          "value": "1; mode=block"
-        }
-      ]
-    },
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
         }
       ]
     }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  }
+  ]
 }
