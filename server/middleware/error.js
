@@ -1,0 +1,41 @@
+import { telegramBot } from '../services/telegram.js'
+
+export const errorHandler = (err, req, res, next) => {
+  console.error('Error:', err)
+
+  if (err.code === 'LIMIT_FILE_SIZE') {
+    return res.status(413).json({
+      author: "aka",
+      email: "akaanakbaik17@proton.me",
+      success: false,
+      error: "File too large. Maximum size is 100MB"
+    })
+  }
+
+  if (err.code === 'LIMIT_FILE_COUNT') {
+    return res.status(413).json({
+      author: "aka",
+      email: "akaanakbaik17@proton.me",
+      success: false,
+      error: "Too many files. Maximum is 5 files"
+    })
+  }
+
+  if (err.message?.includes('Invalid file type')) {
+    return res.status(400).json({
+      author: "aka",
+      email: "akaanakbaik17@proton.me",
+      success: false,
+      error: "Invalid or dangerous file type"
+    })
+  }
+
+  telegramBot.notifyError('Unhandled Error', err.message || 'Unknown error')
+
+  res.status(500).json({
+    author: "aka",
+    email: "akaanakbaik17@proton.me",
+    success: false,
+    error: "Internal server error"
+  })
+}
