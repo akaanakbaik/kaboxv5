@@ -1,0 +1,80 @@
+import { useTranslation } from 'react-i18next'
+import { motion, AnimatePresence } from 'framer-motion'
+import { File, X, Loader2 } from 'lucide-react'
+import { Progress } from '@/components/ui/progress'
+import { Button } from '@/components/ui/button'
+import { cn, formatBytes } from '@/lib/utils'
+import { UploadFile } from '@/types'
+
+interface UploadProgressProps {
+  files: UploadFile[]
+  onRemove: (id: string) => void
+  isUploading: boolean
+}
+
+export function UploadProgress({ files, onRemove, isUploading }: UploadProgressProps) {
+  const { t } = useTranslation()
+
+  const getStatusIcon = (status: UploadFile['status']) => {
+    switch (status) {
+      case 'uploading':
+        return <Loader2 className="h-4 w-4 animate-spin text-primary" />
+      case 'processing':
+        return <Loader2 className="h-4 w-4 animate-spin text-yellow-500" />
+      case 'completed':
+        return <div className="h-4 w-4 rounded-full bg-green-500" />
+      case 'error':
+        return <div className="h-4 w-4 rounded-full bg-red-500" />
+      default:
+        return <File className="h-4 w-4 text-muted-foreground" />
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      <AnimatePresence>
+        {files.map((file, index) => (
+          <motion.div
+            key={file.id}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ delay: index * 0.05 }}
+            className="rounded-lg border bg-card p-3 space-y-2"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3 min-w-0">
+                {getStatusIcon(file.status)}
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">{file.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatBytes(file.size)}
+                  </p>
+                </div>
+              </div>
+              
+              {!isUploading && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 shrink-0"
+                  onClick={() => onRemove(file.id)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+
+            {file.status !== 'pending' && (
+              <Progress 
+                value={file.progress} 
+                size="sm"
+                variant={file.status === 'error' ? 'error' : file.progress === 100 ? 'success' : 'default'}
+              />
+            )}
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </div>
+  )
+}
