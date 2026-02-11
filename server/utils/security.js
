@@ -1,0 +1,53 @@
+import crypto from 'crypto'
+
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'default-key-32-chars-long!!!!!'
+
+export function encryptFile(buffer) {
+  const iv = crypto.randomBytes(16)
+  const cipher = crypto.createCipheriv(
+    'aes-256-cbc',
+    Buffer.from(ENCRYPTION_KEY.padEnd(32).slice(0, 32)),
+    iv
+  )
+  
+  let encrypted = cipher.update(buffer)
+  encrypted = Buffer.concat([encrypted, cipher.final()])
+  
+  return Buffer.concat([iv, encrypted]).toString('base64')
+}
+
+export function decryptFile(encryptedData) {
+  const data = Buffer.from(encryptedData, 'base64')
+  const iv = data.slice(0, 16)
+  const encrypted = data.slice(16)
+  
+  const decipher = crypto.createDecipheriv(
+    'aes-256-cbc',
+    Buffer.from(ENCRYPTION_KEY.padEnd(32).slice(0, 32)),
+    iv
+  )
+  
+  let decrypted = decipher.update(encrypted)
+  decrypted = Buffer.concat([decrypted, decipher.final()])
+  
+  return decrypted
+}
+
+export function generateFileId() {
+  return crypto.randomBytes(8).toString('hex')
+}
+
+export function hashIp(ip) {
+  return crypto
+    .createHash('sha256')
+    .update(ip + ENCRYPTION_KEY)
+    .digest('hex')
+    .substring(0, 16)
+}
+
+export function generateChecksum(buffer) {
+  return crypto
+    .createHash('sha256')
+    .update(buffer)
+    .digest('hex')
+}
