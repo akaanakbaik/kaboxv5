@@ -1,0 +1,137 @@
+{
+  "header": {
+    "title": "Domku Box",
+    "menu": "Menu",
+    "close": "Tutup"
+  },
+  "nav": {
+    "home": "Beranda",
+    "apiDocs": "Dokumentasi API",
+    "terms": "Syarat & Ketentuan"
+  },
+  "home": {
+    "title": "Unggah File Anda",
+    "subtitle": "Seret file ke sini atau klik tombol di bawah",
+    "dragDrop": "Seret & Lepas file di sini",
+    "orClick": "atau klik untuk memilih",
+    "maxFiles": "Maksimal 5 file",
+    "allExtensions": "Semua ekstensi didukung",
+    "startUpload": "Mulai Unggah",
+    "uploading": "Mengunggah...",
+    "processing": "Memproses...",
+    "success": "Berhasil!",
+    "results": "Hasil Unggahan",
+    "copyLink": "Salin",
+    "openLink": "Buka",
+    "copied": "Tersalin!",
+    "error": {
+      "tooMany": "Maksimal 5 file",
+      "tooLarge": "File terlalu besar",
+      "invalid": "File tidak valid",
+      "failed": "Gagal mengunggah"
+    }
+  },
+  "apiDocs": {
+    "title": "Dokumentasi API",
+    "description": "Panduan lengkap penggunaan API Kabox",
+    "baseUrl": "URL Dasar",
+    "endpoints": {
+      "upload": {
+        "title": "Unggah File",
+        "method": "POST",
+        "path": "/api/upload",
+        "description": "Unggah file ke CDN",
+        "params": {
+          "file": "File yang akan diunggah (multipart/form-data)"
+        },
+        "example": "curl -X POST https://kabox.my.id/api/upload -F 'file=@gambar.jpg'",
+        "response": {
+          "success": "true",
+          "data": {
+            "id": "abc123",
+            "url": "https://kabox.my.id/files/abc123.jpg",
+            "name": "gambar.jpg",
+            "size": 1024000,
+            "type": "image/jpeg"
+          }
+        }
+      },
+      "status": {
+        "title": "Cek Status",
+        "method": "GET",
+        "path": "/api/files/:id/status",
+        "description": "Periksa status unggahan",
+        "example": "curl https://kabox.my.id/api/files/abc123/status"
+      },
+      "info": {
+        "title": "Info File",
+        "method": "GET",
+        "path": "/api/files/:id",
+        "description": "Dapatkan informasi file",
+        "example": "curl https://kabox.my.id/api/files/abc123"
+      },
+      "download": {
+        "title": "Unduh File",
+        "method": "GET",
+        "path": "/api/files/:id/download",
+        "description": "Unduh file langsung",
+        "example": "curl -OJ https://kabox.my.id/api/files/abc123/download"
+      }
+    },
+    "limits": {
+      "title": "Batasan",
+      "rateLimit": "10 request per detik per IP",
+      "maxSize": "Maksimal 100MB per file",
+      "maxFiles": "Maksimal 5 file per unggahan"
+    }
+  },
+  "terms": {
+    "title": "Syarat dan Ketentuan",
+    "lastUpdated": "Terakhir diperbarui: Januari 2024",
+    "sections": {
+      "acceptance": {
+        "title": "Penerimaan Syarat",
+        "content": "Dengan mengakses dan menggunakan layanan Kabox, Anda setuju untuk terikat oleh syarat dan ketentuan ini. Jika Anda tidak setuju dengan bagian mana pun, Anda tidak diizinkan menggunakan layanan kami."
+      },
+      "service": {
+        "title": "Deskripsi Layanan",
+        "content": "Kabox menyediakan platform CDN (Content Delivery Network) untuk mengunggah, menyimpan, dan mendistribusikan file media. Layanan ini gratis untuk penggunaan personal dan komersial dengan batasan yang berlaku."
+      },
+      "usage": {
+        "title": "Penggunaan yang Diizinkan",
+        "content": "Anda diizinkan menggunakan layanan ini untuk: menyimpan gambar, video, dokumen, dan file media lainnya; membagikan link ke file yang diunggah; menggunakan API untuk integrasi aplikasi. Anda wajib mematuhi hukum yang berlaku dan tidak menggunakan layanan untuk aktivitas ilegal."
+      },
+      "prohibited": {
+        "title": "Penggunaan yang Dilarang",
+        "content": "Dilarang keras menggunakan layanan untuk: konten ilegal, pornografi anak, malware, virus, phishing, spam, penipuan, pelanggaran hak cipta, atau aktivitas yang merusak layanan. Pelanggaran akan mengakibatkan pemblokiran permanen."
+      },
+      "privacy": {
+        "title": "Privasi dan Data",
+        "content": "Kami menghargai privasi Anda. File yang diunggah disimpan di infrastruktur cloud yang aman. Kami tidak menjual data pengguna. Log akses disimpan untuk keamanan dan analisis. Anda dapat menghapus file kapan saja."
+      },
+      "liability": {
+        "title": "Batasan Tanggung Jawab",
+        "content": "Layanan disediakan 'sebagaimana adanya'. Kami tidak bertanggung jawab atas kehilangan data, kerusakan, atau kerugian yang timbul dari penggunaan layanan. Kami berusaha menjaga uptime 99.9% tetapi tidak menjamin ketersediaan terus-menerus."
+      },
+      "changes": {
+        "title": "Perubahan Syarat",
+        "content": "Kami berhak mengubah syarat ini kapan saja. Perubahan akan diumumkan di website. Penggunaan berkelanjutan setelah perubahan berarti penerimaan syarat baru."
+      },
+      "contact": {
+        "title": "Kontak",
+        "content": "Jika ada pertanyaan tentang syarat ini, hubungi kami di akaanakbaik17@proton.me"
+      }
+    }
+  },
+  "footer": {
+    "createdBy": "dibuat oleh",
+    "aka": "aka",
+    "with": "dengan",
+    "and": "dan",
+    "code": "kode"
+  },
+  "errors": {
+    "404": "Halaman tidak ditemukan",
+    "goHome": "Kembali ke Beranda"
+  }
+}
